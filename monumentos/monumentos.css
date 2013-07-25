@@ -17,13 +17,13 @@ body {
 }
 
 tbody > tr:first-child{
-  color: #96483a;
+  /*color: #96483a;*/
   font-weight: bold;
 }
 tbody > tr:nth-child(2){
-  color: #52918c;
+  /*color: #52918c;*/
   font-weight: bold;
 }tbody > tr:nth-child(3){
-  color: #de8e33;
+  /*color: #de8e33;*/
   font-weight: bold;
 }

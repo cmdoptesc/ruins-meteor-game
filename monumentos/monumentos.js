@@ -61,10 +61,13 @@ if (Meteor.isClient) {
     var gameId = CurrentGame.findOne()._id;
 
     if (points > 0 && Session.get('scoredPositive') !== gameId){
-        // $('.score-number').css('color', '#29B329');
-        // $('.score-number').animate({ fontSize: '60px' }, 300, function(){
-        //   $('.score-number').animate({ fontSize: '30px' }, 300, function(){
-        //     $('.score-number').css('color', '#000000');
+        // $('.selected').css('color', '#29B329');
+        $('.selected').animate({ fontSize: '30px' }, 150, function(){
+            console.log("made bigger");
+        //   $('.selected').animate({ fontSize: '14px' }, 150, function(){
+        //     $('.selected').css('color', '#000000');
+        //   });
+        });
       Session.set('scoredPositive', gameId);
     } else {
       points = Math.floor(points / 20);
@@ -91,7 +94,7 @@ if (Meteor.isClient) {
     return HTMLttpsreport.find({lastPlayed: {$gt: Date.now() - 1000*45 }}, {sort: {score:-1, name: 1}});
   };
 
-  Template.player.userRow = function(){
+  Template.player.userScore = function(){
     return Session.equals('id', this._id) ? "selected" : '';
   };
 
