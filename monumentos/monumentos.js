@@ -1,30 +1,40 @@
 Players = new Meteor.Collection("players");
 Places = new Meteor.Collection("places");
 CurrentGame = new Meteor.Collection("currentgame");
+CurrentPoints = new Meteor.Collection("points");
 
 if (Meteor.isClient) {
   Meteor.startup(function () {
+    var userid = Players.insert({username: 'scoobyClone', score: 0});
+
+    var colors = ['#f00','#00f','#0f0','yellow','orange','#f0f','#444','black','brown','pink'];
+    var userColor = colors[Math.floor(Math.random()*colors.length)];
+
+    Session.set('id', userid);
+    Session.set('color', userColor);
+
     Template.worldMap.rendered = function(){
     var map = L.map('map');
     var osmUrl='http://otile3.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png';
     var osm = new L.TileLayer(osmUrl, {minZoom: 2, maxZoom: 2});
     map.setView(new L.LatLng(30, 0),2);
-    map.dragging.disable();
     map.addLayer(osm);
     function onMapClick(e) {
-        console.log("You clicked the map at " + e.latlng);
-        var currentGPS = CurrentGame.findOne();
-        var dist = e.latlng.distanceTo(L.latLng(currentGPS.lat, currentGPS.lon));
-        setScore(dist/1000);
+      console.log("You clicked the map at " + e.latlng);
+      var targetGeo = CurrentGame.findOne();
+      var dist = e.latlng.distanceTo(L.latLng(targetGeo.lat, targetGeo.lon));
+      setScore(dist/1000);
+      // inserts clicked point into db for other players to see
+      CurrentPoints.insert({id: Session.get('id'), point: e.latlng, color: Session.get('color')});
+      CurrentPoints.find().forEach(function(pointer){
+        L.circle(pointer.point, 500, {color: pointer.color, fillColor: pointer.color, fillOpacity: 0.8}).addTo(map);
+      });
+    }
 
-        L.marker(e.latlng, {color:'red'}).addTo(map);
-      }
+
       var clickMap = _.throttle(onMapClick,2000);
       map.on('click', clickMap);
     };
-
-    var userid = Players.insert({username: 'scoobyClone', score: 0});
-    Session.set('id', userid);
   });
 
   var setScore = function(dist){
@@ -37,7 +47,6 @@ if (Meteor.isClient) {
     }
     Players.update({_id:Session.get('id')}, {$inc: {score: newScore}});
   };
-
 
   Meteor.setInterval(function(){
     Players.update({_id:Session.get('id')}, {$set: {lastPlayed: Date.now()}});
@@ -98,6 +107,7 @@ if (Meteor.isServer) {
     Meteor.methods({
       begin_round: function(){
         CurrentGame.remove({});
+        // CurrentPoints.remove({});
         var placeIndex = Math.floor(Math.random()*4);
         var place = places[placeIndex];
         CurrentGame.insert({name: place.name, lat:place.lat, lon:place.lon});
@@ -106,6 +116,6 @@ if (Meteor.isServer) {
 
     Meteor.setInterval(function(){
       Meteor.call('begin_round');
-    }, 5000);
+    }, 6000);
   });
 }
