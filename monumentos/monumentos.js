@@ -13,7 +13,7 @@ if (Meteor.isClient) {
     Session.set('id', userid);
     Session.set('color', userColor);
 
-    var markerArray = new Array();
+    var markerArray = [];
 
     Template.worldMap.rendered = function(){
       var map = L.map('map');
@@ -47,7 +47,7 @@ if (Meteor.isClient) {
         }
       }
 
-      var clickMap = _.throttle(onMapClick,2000);
+    var clickMap = _.throttle(onMapClick,4000);
       map.on('click', clickMap);
     };
   });
