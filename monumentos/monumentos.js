@@ -13,24 +13,39 @@ if (Meteor.isClient) {
     Session.set('id', userid);
     Session.set('color', userColor);
 
-    Template.worldMap.rendered = function(){
-    var map = L.map('map');
-    var osmUrl='http://otile3.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png';
-    var osm = new L.TileLayer(osmUrl, {minZoom: 2, maxZoom: 2});
-    map.setView(new L.LatLng(30, 0),2);
-    map.addLayer(osm);
-    function onMapClick(e) {
-      console.log("You clicked the map at " + e.latlng);
-      var targetGeo = CurrentGame.findOne();
-      var dist = e.latlng.distanceTo(L.latLng(targetGeo.lat, targetGeo.lon));
-      setScore(dist/1000);
-      // inserts clicked point into db for other players to see
-      CurrentPoints.insert({id: Session.get('id'), point: e.latlng, color: Session.get('color')});
-      CurrentPoints.find().forEach(function(pointer){
-        L.circle(pointer.point, 500, {color: pointer.color, fillColor: pointer.color, fillOpacity: 0.8}).addTo(map);
-      });
-    }
+    var markerArray = new Array();
 
+    Template.worldMap.rendered = function(){
+      var map = L.map('map');
+      var osmUrl='http://otile3.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png';
+      var osm = new L.TileLayer(osmUrl, {minZoom: 2, maxZoom: 2});
+      map.setView(new L.LatLng(30, 0),2);
+      map.addLayer(osm);
+
+      function onMapClick(e) {
+        console.log("You clicked the map at " + e.latlng);
+        var targetGeo = CurrentGame.findOne();
+        var dist = e.latlng.distanceTo(L.latLng(targetGeo.lat, targetGeo.lon));
+        setScore(dist/1000);
+        // inserts clicked point into db for other players to see
+        CurrentPoints.insert({id: Session.get('id'), point: e.latlng, color: Session.get('color')});
+
+        var fuck = CurrentPoints.find().fetch();
+
+        for(var i=0; i<fuck.length; i++) {
+          var pointer = fuck[i];
+          var tmpCircle = new L.circle(pointer.point, 500, {color: pointer.color, fillColor: pointer.color, fillOpacity: 0.8});
+          markerArray.push(tmpCircle);
+          map.addLayer(tmpCircle);
+        }
+
+        if(dist/1000<500) {
+          for(i=0;i<markerArray.length;i++) {
+            map.removeLayer(markerArray[i]);
+          }
+          Meteor.call('begin_round');
+        }
+      }
 
       var clickMap = _.throttle(onMapClick,2000);
       map.on('click', clickMap);
@@ -41,9 +56,6 @@ if (Meteor.isClient) {
     var newScore = 0;
     if(dist<1500) {
       newScore = Math.ceil(10*(1-(dist/2000)));
-      if(dist<250) {
-        Meteor.call('begin_round');
-      }
     }
     Players.update({_id:Session.get('id')}, {$inc: {score: newScore}});
   };
@@ -107,7 +119,7 @@ if (Meteor.isServer) {
     Meteor.methods({
       begin_round: function(){
         CurrentGame.remove({});
-        // CurrentPoints.remove({});
+        CurrentPoints.remove({});
         var placeIndex = Math.floor(Math.random()*4);
         var place = places[placeIndex];
         CurrentGame.insert({name: place.name, lat:place.lat, lon:place.lon});
