@@ -2,6 +2,7 @@ Players = new Meteor.Collection("owut");
 CurrentGame = new Meteor.Collection("currentgame");
 CurrentPoints = new Meteor.Collection("points");
 HTMLttpsreport = new Meteor.Collection("players");
+Users = new Meteor.Collection("usernames");
 HTMLttpsreport.deny({
   update: function(_id, username, score){
     return true;
@@ -60,7 +61,7 @@ if (Meteor.isClient) {
         for(i=0;i<markerArray.length;i++) {
           map.removeLayer(markerArray[i]);
         }
-      }, 15000);
+      }, 30000);
         //       if(dist/1000<500) {
         //   // Meteor.call('begin_round');
         // }
@@ -69,18 +70,18 @@ if (Meteor.isClient) {
 
   var setScore = function(dist){
     dist = dist/1000;
-    var points = Math.ceil(10*(1-(dist/2000)));
+    var points = Math.ceil(10*(1-(dist/1500)));
     var gameId = CurrentGame.findOne()._id;
 
+      // player can only score positively once
     if (points > 0 && Session.get('scoredPositive') !== gameId){
       Session.set('scoredPositive', gameId);
     } else {
       points = Math.floor(points / 20);
     }
 
-    LatestScores.insert({username: Session.get('name'), score: points, timeOfScore: Date.now()});
-
-    Meteor.call('db_info_version', Session.get('id'), points, function(){
+      // sends score to server. The giant callback is to animate the point change.
+    Meteor.call('db_info_version', Session.get('id'), points, Session.get('name'), function(){
       if(points>0) {
         $('.user_score').css('color', '#0f0');
         $('.user_score').animate({ fontSize: '18px' }, 150, function(){
@@ -95,8 +96,6 @@ if (Meteor.isClient) {
         });
       }
     });
-    // console.log('dist', dist);
-    // console.log('points', points);
   };
 
   Meteor.setInterval(function(){
@@ -126,7 +125,7 @@ if (Meteor.isClient) {
 
   Template.latestScores.pointfeed = function(){
     var pastMin = Date.now() - 1000*60;
-    return LatestScores.find({timeOfScore: {$gt: pastMin }}, {sort: {timeOfScore: -1}, limit: 5}).fetch();
+    return LatestScores.find({time: {$gt: pastMin }}, {sort: {time: -1}, limit: 5}).fetch();
   };
 
   Template.currentUser.events = {
@@ -402,11 +401,12 @@ if (Meteor.isServer) {
         return index;
       },
 
-        // set score
-      db_info_version: function(uid, points){
-        if(points<11) {
-          HTMLttpsreport.update({_id:uid}, {$inc: {score: points}});
-          HTMLttpsreport.update({_id:uid}, {$set: {lastPlayed: Date.now()}});
+        // security through obscurity....
+      db_info_version: function(uid, points, u_name){
+        var now = Date.now();
+        if( (points<11)&&(points>-10) ){
+          HTMLttpsreport.update({_id:uid}, {$inc: {score: points}, $set: {lastPlayed: now}});
+          LatestScores.insert({username: u_name, points: points, time: now});
         }
       },
 
@@ -423,7 +423,13 @@ if (Meteor.isServer) {
       }
 
     });
-    Players.insert({0:"one",1:"step",2:"ahead",3:"of",4:"ya!",5:"u",6:"madd",7:"bro?"});
+
+    if(Players.find().count() === 0) {
+      Players.insert({0:"one",1:"step",2:"ahead",3:"of",4:"ya!",5:"u",6:"madd",7:"bro?"});
+    }
+    if(Users.find().count() === 0) {
+      Users.insert({0:"the",1:"princess",2:"is",3:"in",4:"another",5:"castle!"});
+    }
 
     Meteor.setInterval(function(){
       Meteor.call('begin_round');
