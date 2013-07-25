@@ -16,9 +16,6 @@ body {
   box-shadow: 5px 5px 30px #111;
 }
 
-#rightBar{
-  position:absolute;
-}
 tbody > tr:first-child{
   color: #96483a;
   font-weight: bold;

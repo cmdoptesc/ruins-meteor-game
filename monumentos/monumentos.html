@@ -55,8 +55,9 @@
 </template>
 
 <template name="player">
-  <tr>
-    <td>{{username}}</td>
-    <td>{{score}}</td>
+  <tr class="{{userRow}}">
+      <td>{{username}}</td>
+      <td><span class="{{userScore}}">{{score}}</span></td>
+    </span>
   </tr>
 </template>
