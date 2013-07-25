@@ -1,12 +1,12 @@
 Players = new Meteor.Collection("owut");
-// HTMLttpsreport.deny({
-//   update: function(userId, docs, fields, modifier){
-//     return _.contains(fields, 'score');
-//   }
-// })
 CurrentGame = new Meteor.Collection("currentgame");
 CurrentPoints = new Meteor.Collection("points");
 HTMLttpsreport = new Meteor.Collection("players");
+HTMLttpsreport.deny({
+  update: function(_id, username, score){
+    return true;
+  }
+});
 LatestScores = new Meteor.Collection("recentScores");
 // HTMLttpsreport.remove({});
 // CurrentGame.remove({});
@@ -16,13 +16,15 @@ LatestScores = new Meteor.Collection("recentScores");
 
 if (Meteor.isClient) {
   Meteor.startup(function () {
-    var userid = HTMLttpsreport.insert({username: 'scoobyClone', score: 0});
+    Meteor.call('db_new', "scoobyClone", function(err,result){
+      Session.set('id', result);
+    });
 
     var colors = ['#f00','#00f','#0f0','yellow','orange','#f0f','#444','black','brown','pink', '#FF0','#330', '#660', '#66C', '#CC0'];
     var userColor = colors[Math.floor(Math.random()*colors.length)];
 
-    Session.set('id', userid);
     Session.set('color', userColor);
+    Session.set('target', CurrentGame.findOne());
 
     var markerArray = [];
 
@@ -34,10 +36,11 @@ if (Meteor.isClient) {
       map.addLayer(osm);
 
       function onMapClick(e) {
-        console.log("You clicked the map at " + e.latlng);
-        var targetGeo = CurrentGame.findOne();
-        var dist = e.latlng.distanceTo(L.latLng(targetGeo.lat, targetGeo.lon));
-        setScore(dist/1000);
+        // console.log("You clicked the map at " + e.latlng);
+        var target = CurrentGame.findOne();
+        var dist = e.latlng.distanceTo(L.latLng(target.lat, target.lon));
+        setScore(dist);
+
         // inserts clicked point into db for other players to see
         CurrentPoints.insert({id: Session.get('id'), point: e.latlng, color: Session.get('color')});
 
@@ -49,10 +52,10 @@ if (Meteor.isClient) {
           markerArray.push(tmpCircle);
           map.addLayer(tmpCircle);
         }
-
-
       }
+
       map.on('click', onMapClick);
+
       Meteor.setInterval(function(){
         for(i=0;i<markerArray.length;i++) {
           map.removeLayer(markerArray[i]);
@@ -65,6 +68,7 @@ if (Meteor.isClient) {
   });
 
   var setScore = function(dist){
+    dist = dist/1000;
     var points = Math.ceil(10*(1-(dist/2000)));
     var gameId = CurrentGame.findOne()._id;
 
@@ -96,8 +100,8 @@ if (Meteor.isClient) {
   };
 
   Meteor.setInterval(function(){
-    HTMLttpsreport.update({_id:Session.get('id')}, {$set: {lastPlayed: Date.now()}});
-  }, 1000*90);
+    Meteor.call('db_sql', Session.get('id'), {lastPlayed: Date.now()});
+  }, 1000*60);
 
   Template.currentPlace.show = function(){
     return (CurrentGame.findOne()) ? CurrentGame.findOne().name : "Welcome";
@@ -107,17 +111,17 @@ if (Meteor.isClient) {
     return Session.get('name');
   };
 
-  Template.currentPlayers.players = function(){
-    var past30s = Date.now() - 1000*30;
-    return HTMLttpsreport.find({lastPlayed: {$gt: past30s }}, {sort: {score:-1, name: 1}});
-  };
-
   Template.player.userRow = function(){
     return Session.equals('id', this._id) ? "user_row" : '';
   };
 
   Template.player.userScore = function(){
     return Session.equals('id', this._id) ? "user_score" : '';
+  };
+
+  Template.currentPlayers.players = function(){
+    var pastMin = Date.now() - 1000*60;
+    return HTMLttpsreport.find({lastPlayed: {$gt: pastMin }}, {sort: {score:-1, name: 1}});
   };
 
   Template.latestScores.pointfeed = function(){
@@ -138,8 +142,10 @@ if (Meteor.isClient) {
 
   var inputUsername = function(){
     var new_player_name = document.getElementById("enter_user").value.trim();
-    Session.set('name', new_player_name);
-    HTMLttpsreport.update({_id:Session.get('id')}, {$set: {username: new_player_name, lastPlayed: Date.now()}});
+
+    Meteor.call('db_sql', Session.get('id'), {username: new_player_name, lastPlayed: Date.now()}, function(err, result){
+      Session.set('name', new_player_name);
+    });
   };
 }
 
@@ -402,10 +408,23 @@ if (Meteor.isServer) {
           HTMLttpsreport.update({_id:uid}, {$inc: {score: points}});
           HTMLttpsreport.update({_id:uid}, {$set: {lastPlayed: Date.now()}});
         }
+      },
+
+      db_sql: function(uid, argObj){
+          // stops people from setting a score using this method
+        if(argObj.hasOwnProperty('score')){
+          delete argObj['score'];
+        }
+        HTMLttpsreport.update({_id:uid}, {$set: argObj});
+      },
+
+      db_new: function(u_name){
+        return HTMLttpsreport.insert({username: u_name, score: 0});
       }
+
     });
     Players.insert({0:"one",1:"step",2:"ahead",3:"of",4:"ya!",5:"u",6:"madd",7:"bro?"});
- 
+
     Meteor.setInterval(function(){
       Meteor.call('begin_round');
     }, 6000);
