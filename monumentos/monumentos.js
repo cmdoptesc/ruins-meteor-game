@@ -1,4 +1,9 @@
 Players = new Meteor.Collection("players");
+// Players.deny({
+//   update: function(userId, docs, fields, modifier){
+//     return _.contains(fields, 'score');
+//   }
+// })
 Places = new Meteor.Collection("places");
 CurrentGame = new Meteor.Collection("currentgame");
 CurrentPoints = new Meteor.Collection("points");
@@ -7,7 +12,7 @@ if (Meteor.isClient) {
   Meteor.startup(function () {
     var userid = Players.insert({username: 'scoobyClone', score: 0});
 
-    var colors = ['#f00','#00f','#0f0','yellow','orange','#f0f','#444','black','brown','pink'];
+    var colors = ['#f00','#00f','#0f0','yellow','orange','#f0f','#444','black','brown','pink', '#FF0','#330', '#660', '#66C', '#CC0'];
     var userColor = colors[Math.floor(Math.random()*colors.length)];
 
     Session.set('id', userid);
