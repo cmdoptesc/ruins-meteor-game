@@ -4,12 +4,15 @@ Players = new Meteor.Collection("owut");
 //     return _.contains(fields, 'score');
 //   }
 // })
-// HTMLttpsreport.remove({});
 CurrentGame = new Meteor.Collection("currentgame");
 CurrentPoints = new Meteor.Collection("points");
 HTMLttpsreport = new Meteor.Collection("players");
 LatestScores = new Meteor.Collection("recentScores");
-
+// HTMLttpsreport.remove({});
+// CurrentGame.remove({});
+// CurrentPoints.remove({});
+// Players.remove({});
+// LatestScores.remove({});
 
 if (Meteor.isClient) {
   Meteor.startup(function () {
