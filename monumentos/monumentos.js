@@ -43,21 +43,24 @@ if (Meteor.isClient) {
           for(i=0;i<markerArray.length;i++) {
             map.removeLayer(markerArray[i]);
           }
-          Meteor.call('begin_round');
+          // Meteor.call('begin_round');
         }
       }
-
-    var clickMap = _.throttle(onMapClick,4000);
-      map.on('click', clickMap);
+      map.on('click', onMapClick);
     };
   });
 
   var setScore = function(dist){
-    var newScore = 0;
-    if(dist<1500) {
-      newScore = Math.ceil(10*(1-(dist/2000)));
+    var newScore = Math.ceil(10*(1-(dist/2000)));
+    if (newScore > 0 && Session.get('scoredPositive') !== CurrentGame.findOne()._id){
+      Session.set('scoredPositive', CurrentGame.findOne()._id);
+      Players.update({_id:Session.get('id')}, {$inc: {score: newScore}});
+    } else if (newScore < 0) {
+      newScore = Math.floor(newScore / 20);
+      Players.update({_id:Session.get('id')}, {$inc: {score: newScore}});
     }
-    Players.update({_id:Session.get('id')}, {$inc: {score: newScore}});
+    console.log('dist', dist);
+    console.log('newscore', newScore);
   };
 
   Meteor.setInterval(function(){
@@ -108,6 +111,166 @@ if (Meteor.isServer) {
         name: "Mount Rushmore",
         lat: 43.880154,
         lon: -103.4593
+      },
+      {
+        name: "The Great Wall of China",
+        lat: 40.431941,
+        lon: 116.558319
+      },
+      {
+        name: "Bazar Old City",
+        lat: 26.062204,
+        lon: 84.609988
+      },
+      {
+        name: "The Kremlin",
+        lat: 55.752120,
+        lon: 37.617665
+      },
+      {
+        name: "Leaning Tower",
+        lat: 43.722952,
+        lon: 10.396597
+      },
+      {
+        name: "The Acropolis",
+        lat: 37.971532,
+        lon: 23.725749
+      },
+      {
+        name: "Stonehenge",
+        lat: 51.178882,
+        lon: -1.826215
+      },
+      {
+        name: "The Ziggurat of Ur",
+        lat: 30.962706,
+        lon: 46.103085
+      },
+      {
+        name: "Pyramids of Teotihuacan",
+        lat: 19.692273,
+        lon: -98.843503
+      },
+      {
+        name: "Delphi",
+        lat: 42.123604,
+        lon: 14.702573
+      },
+      {
+        name: "Borobudur",
+        lat: -7.608000,
+        lon: 110.204000
+      },
+      {
+        name: "The Ajanta Caves",
+        lat: 20.552756,
+        lon: 75.700809
+      },
+      {
+        name: "The Pantheon",
+        lat: 41.898629,
+        lon: 12.476867
+      },
+      {
+        name: "The Hypogeum",
+        lat: 35.869570,
+        lon: 14.506885
+      },
+      {
+        name: "Yongbyon Nuclear Scientific Research Centre",
+        lat: 40.339852,
+        lon: 127.510093
+      },
+      {
+        name: "Angkor Wat",
+        lat: 13.412469,
+        lon: 103.866986
+      },
+      {
+        name: "Bermuda Triangle",
+        lat: 37.3563429,
+        lon: -77.39113
+      },
+      {
+        name: "The Loch Ness Monster",
+        lat: 57.322857,
+        lon: -4.424382
+      },
+      {
+        name: "Nazca Lines",
+        lat: -14.739027,
+        lon: -75.130005
+      },
+      {
+        name: "Lake Vostok",
+        lat: -77.500000,
+        lon: 106.000000
+      },
+      {
+        name: "Taj Mahal",
+        lat: 27.175009,
+        lon: 78.041849
+      },
+      {
+        name: "Grand Canyon",
+        lat: 36.054445,
+        lon: -112.140111
+      },
+      {
+        name: "Mount Everest",
+        lat: 27.985818,
+        lon: 86.923596
+      },
+      {
+        name: "Great Barrier Reef",
+        lat: -18.286130,
+        lon: 147.700008
+      },
+      {
+        name: "Iguazu Falls",
+        lat: -25.695278,
+        lon: -54.436667
+      },
+      {
+        name: "Halong Bay",
+        lat: 20.848749,
+        lon: 107.219358
+      },
+      {
+        name: "Amazon Rainforest",
+        lat: -4.750430,
+        lon: -64.333070
+      },
+      {
+        name: "Colosseum",
+        lat: 41.890262,
+        lon: 12.492310
+      },
+      {
+        name: "CN Tower",
+        lat: 43.642566,
+        lon: -79.387057
+      },
+      {
+        name: "Cairo Citadel",
+        lat: 15.693648,
+        lon: 43.606706
+      },
+      {
+        name: "Tokyo",
+        lat: 35.689487,
+        lon: 139.691706
+      },
+      {
+        name: "Mumbai",
+        lat: 19.075984,
+        lon: 72.877656
+      },
+      {
+        name: "Copenhagen",
+        lat: 55.676097,
+        lon: 12.568337
       }
     ];
 
@@ -120,7 +283,7 @@ if (Meteor.isServer) {
       begin_round: function(){
         CurrentGame.remove({});
         CurrentPoints.remove({});
-        var placeIndex = Math.floor(Math.random()*4);
+        var placeIndex = Math.floor(Math.random()*places.length);
         var place = places[placeIndex];
         CurrentGame.insert({name: place.name, lat:place.lat, lon:place.lon});
       }

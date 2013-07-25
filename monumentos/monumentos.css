@@ -7,12 +7,26 @@ body {
     -moz-user-select: none;
     -o-user-select: none;
     user-select: none;
+    background-color: #b2b596;
 }
 
 #map {
   width: 960px; height: 600px;
+  border: 1px solid gray;
+  box-shadow: 5px 5px 30px #111;
 }
 
 #rightBar{
   position:absolute;
+}
+tbody > tr:first-child{
+  color: #96483a;
+  font-weight: bold;
+}
+tbody > tr:nth-child(2){
+  color: #52918c;
+  font-weight: bold;
+}tbody > tr:nth-child(3){
+  color: #de8e33;
+  font-weight: bold;
 }

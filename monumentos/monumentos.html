@@ -5,16 +5,17 @@
 
 <body>
 <div class="row">
-  <div class="span12">
+  <div class="span12 offset1">
     <h1>Monumentos</h1>
     <div class="row">
       <div class="span9">{{> worldMap }}</div>
-      <div class="span3">
+      <div class="span2">
         {{> currentUser}}
           {{> currentPlayers}}
       </div>
     </div>
     <h2>{{> currentPlace }}</h2>
+    <p><em>Try to click on the locations before your friends do!</em></p>
   </div>
 </div>
 </body>
@@ -35,7 +36,7 @@
       <h2>{{ user }}</h2>
     {{else}}
       <input type='text' placeholder='Enter Your Name' id='enter_user'>
-      <input type="button" class="add" value="Set Name" />
+      <input type="button" class="add btn btn-info" value="Set Name" />
     {{/if}}
   </div>
 </template>
