@@ -8,6 +8,8 @@ Players = new Meteor.Collection("owut");
 CurrentGame = new Meteor.Collection("currentgame");
 CurrentPoints = new Meteor.Collection("points");
 HTMLttpsreport = new Meteor.Collection("players");
+LatestScores = new Meteor.Collection("recentScores");
+
 
 if (Meteor.isClient) {
   Meteor.startup(function () {
@@ -36,23 +38,26 @@ if (Meteor.isClient) {
         // inserts clicked point into db for other players to see
         CurrentPoints.insert({id: Session.get('id'), point: e.latlng, color: Session.get('color')});
 
-        var fuck = CurrentPoints.find().fetch();
+        var pointsFromServer = CurrentPoints.find().fetch();
 
-        for(var i=0; i<fuck.length; i++) {
-          var pointer = fuck[i];
+        for(var i=0; i<pointsFromServer.length; i++) {
+          var pointer = pointsFromServer[i];
           var tmpCircle = new L.circle(pointer.point, 500, {color: pointer.color, fillColor: pointer.color, fillOpacity: 0.8});
           markerArray.push(tmpCircle);
           map.addLayer(tmpCircle);
         }
 
-        if(dist/1000<500) {
-          for(i=0;i<markerArray.length;i++) {
-            map.removeLayer(markerArray[i]);
-          }
-          // Meteor.call('begin_round');
-        }
+
       }
       map.on('click', onMapClick);
+      Meteor.setInterval(function(){
+        for(i=0;i<markerArray.length;i++) {
+          map.removeLayer(markerArray[i]);
+        }
+      }, 15000);
+        //       if(dist/1000<500) {
+        //   // Meteor.call('begin_round');
+        // }
     };
   });
 
@@ -61,26 +66,35 @@ if (Meteor.isClient) {
     var gameId = CurrentGame.findOne()._id;
 
     if (points > 0 && Session.get('scoredPositive') !== gameId){
-        // $('.selected').css('color', '#29B329');
-        $('.selected').animate({ fontSize: '30px' }, 150, function(){
-            console.log("made bigger");
-        //   $('.selected').animate({ fontSize: '14px' }, 150, function(){
-        //     $('.selected').css('color', '#000000');
-        //   });
-        });
       Session.set('scoredPositive', gameId);
     } else {
       points = Math.floor(points / 20);
     }
 
-    Meteor.call('db_info_version', Session.get('id'), points);
-    console.log('dist', dist);
-    console.log('points', points);
+    LatestScores.insert({username: Session.get('name'), score: points, timeOfScore: Date.now()});
+
+    Meteor.call('db_info_version', Session.get('id'), points, function(){
+      if(points>0) {
+        $('.user_score').css('color', '#0f0');
+        $('.user_score').animate({ fontSize: '18px' }, 150, function(){
+          $('.user_score').animate({ fontSize: '17px' }, 150, function(){
+            $('.user_score').css('color', '#000');
+          });
+        });
+      } else {
+        $('.user_score').css('color', '#f00');
+        $('.user_score').animate({fontSize:'17px'}, 400, function(){
+          $('.user_score').css('color', '#000');
+        });
+      }
+    });
+    // console.log('dist', dist);
+    // console.log('points', points);
   };
 
   Meteor.setInterval(function(){
     HTMLttpsreport.update({_id:Session.get('id')}, {$set: {lastPlayed: Date.now()}});
-  }, 1000*30);
+  }, 1000*90);
 
   Template.currentPlace.show = function(){
     return (CurrentGame.findOne()) ? CurrentGame.findOne().name : "Welcome";
@@ -91,20 +105,38 @@ if (Meteor.isClient) {
   };
 
   Template.currentPlayers.players = function(){
-    return HTMLttpsreport.find({lastPlayed: {$gt: Date.now() - 1000*45 }}, {sort: {score:-1, name: 1}});
+    var past30s = Date.now() - 1000*30;
+    return HTMLttpsreport.find({lastPlayed: {$gt: past30s }}, {sort: {score:-1, name: 1}});
+  };
+
+  Template.player.userRow = function(){
+    return Session.equals('id', this._id) ? "user_row" : '';
   };
 
   Template.player.userScore = function(){
-    return Session.equals('id', this._id) ? "selected" : '';
+    return Session.equals('id', this._id) ? "user_score" : '';
+  };
+
+  Template.latestScores.pointfeed = function(){
+    var pastMin = Date.now() - 1000*60;
+    return LatestScores.find({timeOfScore: {$gt: pastMin }}, {sort: {timeOfScore: -1}, limit: 5}).fetch();
   };
 
   Template.currentUser.events = {
-    'click input.add': function () {
-      // notice the added trim()
-      var new_player_name = document.getElementById("enter_user").value.trim();
-      Session.set('name', new_player_name);
-      HTMLttpsreport.update({_id:Session.get('id')}, {$set: {username: new_player_name, lastPlayed: Date.now()}});
+    'keypress #enter_user': function (e) {
+      if (e.which === 13) {
+        inputUsername();
+      }
+    },
+    'click input.add': function(){
+      inputUsername();
     }
+  };
+
+  var inputUsername = function(){
+    var new_player_name = document.getElementById("enter_user").value.trim();
+    Session.set('name', new_player_name);
+    HTMLttpsreport.update({_id:Session.get('id')}, {$set: {username: new_player_name, lastPlayed: Date.now()}});
   };
 }
 
@@ -271,19 +303,14 @@ if (Meteor.isServer) {
         lon: 12.492310
       },
       {
-        name: "CN Tower",
-        lat: 43.642566,
-        lon: -79.387057
-      },
-      {
         name: "Cairo Citadel",
         lat: 15.693648,
         lon: 43.606706
       },
       {
-        name: "Tokyo",
-        lat: 35.689487,
-        lon: 139.691706
+        name: "Iwo Jima",
+        lat: 24.774024,
+        lon: 141.327285
       },
       {
         name: "Mumbai",
@@ -291,9 +318,54 @@ if (Meteor.isServer) {
         lon: 72.877656
       },
       {
-        name: "Copenhagen",
-        lat: 55.676097,
-        lon: 12.568337
+        name: "Mecca",
+        lat: 21.416667,
+        lon: 39.816667
+      },
+      {
+        name: "Detroit",
+        lat: 42.331427,
+        lon: -83.045754
+      },
+      {
+        name: "Vacaville",
+        lat: 38.356577,
+        lon: -121.987744
+      },
+      {
+        name: "Pearl Harbour",
+        lat: 21.344507,
+        lon: -157.974891
+      },
+      {
+        name: "Les Egouts de Paris",
+        lat: 48.856614,
+        lon: 2.352222
+      },
+      {
+        name: "Venice",
+        lat: 45.440847,
+        lon: 12.315515
+      },
+      {
+        name: "Temple of Karnak",
+        lat: 25.718833,
+        lon: 32.657271
+      },
+      {
+        name: "Forbidden City",
+        lat: 39.915590,
+        lon: 116.396977
+      },
+      {
+        name: "Alhambra",
+        lat: 38.900000,
+        lon: -3.050000
+      },
+      {
+        name: "Hagia Sophia",
+        lat: 41.008356,
+        lon: 28.980099
       }
     ];
 
@@ -325,11 +397,12 @@ if (Meteor.isServer) {
       db_info_version: function(uid, points){
         if(points<11) {
           HTMLttpsreport.update({_id:uid}, {$inc: {score: points}});
+          HTMLttpsreport.update({_id:uid}, {$set: {lastPlayed: Date.now()}});
         }
       }
     });
-    Players.insert({0:"Suq",1:"Madiq",2:"Keep",3:"Trying"});
-
+    Players.insert({0:"one",1:"step",2:"ahead",3:"of",4:"ya!",5:"u",6:"madd",7:"bro?"});
+ 
     Meteor.setInterval(function(){
       Meteor.call('begin_round');
     }, 6000);

@@ -1,21 +1,37 @@
 <head>
-  <title>monumentos</title>
+  <title>ruins</title>
   <style>#map { width: 880px; height: 600px; }</style>
 </head>
 
 <body>
 <div class="row">
   <div class="span12 offset1">
-    <h1>Monumentos</h1>
+    <h1>Ruins</h1>
     <div class="row">
       <div class="span9">{{> worldMap }}</div>
       <div class="span2">
         {{> currentUser}}
-          {{> currentPlayers}}
+        <h4>Leaderboard</h4>
+        {{> currentPlayers}}
       </div>
     </div>
-    <h2>{{> currentPlace }}</h2>
-    <p><em>Try to click on the locations before your friends do!</em></p>
+  </div>
+</div>
+<div class="row">
+  <div class="span12 offset1">
+    <div class="row">
+      <div class="span6">
+      <h2>{{> currentPlace }}</h2>
+      <h4 class="text-info">How to play:</h4>
+      <p class="text-info">- Try to click on the locations before your friends do!</p>
+      <p class="text-info">- You score points the closer you click and lose points if you click too far away.</p>
+      <p class="text-info">- You can't get points for the same location twice.</p>
+
+      </div>
+      <div class="span3">
+        {{> latestScores }}
+      </div>
+    </div>
   </div>
 </div>
 </body>
@@ -36,7 +52,7 @@
       <h2>{{ user }}</h2>
     {{else}}
       <input type='text' placeholder='Enter Your Name' id='enter_user'>
-      <input type="button" class="add btn btn-info" value="Set Name" />
+      <input type="button" class="add btn btn-info btn-mini" value="Set Name" />
     {{/if}}
   </div>
 </template>
@@ -55,9 +71,33 @@
 </template>
 
 <template name="player">
-  <tr class="{{userRow}}">
+  <tr class="currentPlayers {{userRow}}">
       <td>{{username}}</td>
       <td><span class="{{userScore}}">{{score}}</span></td>
+    </span>
+  </tr>
+</template>
+
+<template name="latestScores">
+  {{#if pointfeed}}
+  <h4>Points Feed</h4>
+  <table class="table">
+    <thead>
+    <th>User:</th><th>Latest Points</th>
+    </thead>
+    <tbody>
+      {{#each pointfeed}}
+        {{> score }}
+      {{/each}}
+  </tbody>
+  </table>
+  {{/if}}
+</template>
+
+<template name="score">
+  <tr>
+      <td class="scorefeed">{{username}}</td>
+      <td class="scorefeed">{{score}}</td>
     </span>
   </tr>
 </template>

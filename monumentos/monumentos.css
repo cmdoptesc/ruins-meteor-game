@@ -16,14 +16,23 @@ body {
   box-shadow: 5px 5px 30px #111;
 }
 
-tbody > tr:first-child{
-  /*color: #96483a;*/
+.user_row {
+  font-size: 17px;
+}
+
+tbody > tr:first-child {
   font-weight: bold;
 }
 tbody > tr:nth-child(2){
-  /*color: #52918c;*/
   font-weight: bold;
-}tbody > tr:nth-child(3){
-  /*color: #de8e33;*/
+}
+tbody > tr:nth-child(3){
   font-weight: bold;
+}
+
+.scorefeed {
+  font-size: 12px;
+  line-height: 10px;
+  font-weight: normal;
+  padding: 0px;
 }
