@@ -1,0 +1,63 @@
+<head>
+  <title>monumentos</title>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.3/leaflet.css" />
+  <script src="http://cdn.leafletjs.com/leaflet-0.6.3/leaflet.js"></script>
+  <style>#map { width: 880px; height: 600px; }</style>
+</head>
+
+<body>
+<div class="row">
+  <div class="span12">
+    <h1>Monumentos</h1>
+    <div class="row">
+      <div class="span9">{{> worldMap }}</div>
+      <div class="span3">
+        {{> currentUser}}
+          {{> currentPlayers}}
+      </div>
+    </div>
+    <h2>{{> currentPlace }}</h2>
+  </div>
+</div>
+</body>
+
+<template name="worldMap">
+  {{#constant}}
+    <div id="map"></div>
+  {{/constant}}
+</template>
+
+<template name="currentPlace">
+  <div id="placeAnnouncement">{{show}}</div>
+</template>
+
+<template name="currentUser">
+  <div>
+    {{#if user}}
+      <h2>{{ user }}</h2>
+    {{else}}
+      <input type='text' placeholder='Enter Your Name' id='enter_user'>
+      <input type="button" class="add" value="Set Name" />
+    {{/if}}
+  </div>
+</template>
+
+<template name="currentPlayers">
+  <table class="table table-striped">
+    <thead>
+    <th>Challengers:</th><th>Scores:</th>
+    </thead>
+    <tbody>
+    {{#each players}}
+      {{> player }}
+    {{/each}}
+  </tbody>
+  </table>
+</template>
+
+<template name="player">
+  <tr>
+    <td>{{username}}</td>
+    <td>{{score}}</td>
+  </tr>
+</template>
