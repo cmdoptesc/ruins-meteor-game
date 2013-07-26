@@ -21,7 +21,7 @@ if (Meteor.isClient) {
       Session.set('id', result);
     });
 
-    var colors = ['#f00','#00f','#0f0','yellow','orange','#f0f','#444','black','brown','pink', '#FF0','#330', '#660', '#66C', '#CC0'];
+    var colors = ['#f00','#00f','#0f0','orange','#f0f','#444','black','#FF0','#330', '#660', '#66C'];
     var userColor = colors[Math.floor(Math.random()*colors.length)];
 
     Session.set('color', userColor);
@@ -43,28 +43,35 @@ if (Meteor.isClient) {
         setScore(dist);
 
         // inserts clicked point into db for other players to see
-        CurrentPoints.insert({id: Session.get('id'), point: e.latlng, color: Session.get('color')});
+        CurrentPoints.insert({id: Session.get('id'), point: e.latlng, color: Session.get('color')}, function(){
+          var pointsFromServer = CurrentPoints.find().fetch();
 
-        var pointsFromServer = CurrentPoints.find().fetch();
-
-        for(var i=0; i<pointsFromServer.length; i++) {
-          var pointer = pointsFromServer[i];
-          var tmpCircle = new L.circle(pointer.point, 500, {color: pointer.color, fillColor: pointer.color, fillOpacity: 0.8});
-          markerArray.push(tmpCircle);
-          map.addLayer(tmpCircle);
-        }
+          for(var i=0; i<pointsFromServer.length; i++) {
+            var pointer = pointsFromServer[i];
+            var tmpCircle = new L.circle(pointer.point, 500, {color: pointer.color, fillColor: pointer.color, fillOpacity: 0.8});
+            markerArray.push(tmpCircle);
+            map.addLayer(tmpCircle);
+          }
+        });
       }
 
       map.on('click', onMapClick);
 
+        // removes points every 10 seconds
       Meteor.setInterval(function(){
-        for(i=0;i<markerArray.length;i++) {
+        var rem, len = markerArray.length;
+        if(len>20) {
+          rem = Math.floor(len*( (1/2)-(12/(len+12)) ));
+        } else {
+          rem = Math.floor(len/10);
+        }
+
+        for(var i=0; i<rem; i++) {
           map.removeLayer(markerArray[i]);
         }
-      }, 30000);
-        //       if(dist/1000<500) {
-        //   // Meteor.call('begin_round');
-        // }
+        markerArray.splice(0, rem);
+
+      }, 10000);
     };
   });
 
@@ -73,15 +80,20 @@ if (Meteor.isClient) {
     var points = Math.ceil(10*(1-(dist/1500)));
     var gameId = CurrentGame.findOne()._id;
 
-      // player can only score positively once
+      // player can only score positive points once
     if (points > 0 && Session.get('scoredPositive') !== gameId){
       Session.set('scoredPositive', gameId);
     } else {
       points = Math.floor(points / 20);
     }
 
-      // sends score to server. The giant callback is to animate the point change.
+      // sends score to server
     Meteor.call('db_info_version', Session.get('id'), points, Session.get('name'), function(){
+        // starts a new round if the player nails it
+      if(dist<100) {
+        Meteor.call('begin_round');
+      }
+        // giant portion below is to animate the point change on the right bar
       if(points>0) {
         $('.user_score').css('color', '#0f0');
         $('.user_score').animate({ fontSize: '18px' }, 150, function(){
@@ -181,7 +193,7 @@ if (Meteor.isServer) {
         lon: 116.558319
       },
       {
-        name: "Bazar Old City",
+        name: "Old City Bazaar",
         lat: 26.062204,
         lon: 84.609988
       },
@@ -381,7 +393,15 @@ if (Meteor.isServer) {
       begin_round: function(){
         gameCount++;
         CurrentGame.remove({});
-        CurrentPoints.remove({});
+
+        if(gameCount%5 === 0) {
+          CurrentPoints.remove({});
+          if(gameCount>200) {
+            gameCount = 0;
+            placesVisited = {};
+          }
+        }
+
         var index = Meteor.call('get_place', gameCount);
         var place = places[index];
         CurrentGame.insert({name: place.name, lat:place.lat, lon:place.lon});
@@ -426,9 +446,6 @@ if (Meteor.isServer) {
 
     if(Players.find().count() === 0) {
       Players.insert({0:"one",1:"step",2:"ahead",3:"of",4:"ya!",5:"u",6:"madd",7:"bro?"});
-    }
-    if(Users.find().count() === 0) {
-      Users.insert({0:"the",1:"princess",2:"is",3:"in",4:"another",5:"castle!"});
     }
 
     Meteor.setInterval(function(){
