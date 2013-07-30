@@ -37,7 +37,6 @@ if (Meteor.isClient) {
       map.addLayer(osm);
 
       function onMapClick(e) {
-        // console.log("You clicked the map at " + e.latlng);
         var target = CurrentGame.findOne();
         var dist = e.latlng.distanceTo(L.latLng(target.lat, target.lon));
         setScore(dist);
@@ -60,16 +59,19 @@ if (Meteor.isClient) {
         // removes points every 10 seconds
       Meteor.setInterval(function(){
         var rem, len = markerArray.length;
-        if(len>20) {
-          rem = Math.floor(len*( (1/2)-(12/(len+12)) ));
-        } else {
-          rem = Math.floor(len/10);
-        }
 
-        for(var i=0; i<rem; i++) {
-          map.removeLayer(markerArray[i]);
+        if(len>0) {
+          if(len>20) {
+            rem = Math.floor(len*( (1/2)-(12/(len+12)) ));
+          } else {
+            rem = Math.ceil(len/10);
+          }
+
+          for(var i=0; i<rem; i++) {
+            map.removeLayer(markerArray[i]);
+          }
+          markerArray.splice(0, rem);
         }
-        markerArray.splice(0, rem);
 
       }, 10000);
     };
