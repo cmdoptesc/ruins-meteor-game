@@ -6,6 +6,8 @@ Multiplayer geography game created in under 24 hours using the Meteor platform.
 Check out the live demo: [ruins.meteor.com](http://ruins.meteor.com)
 
 
+License
+-------
 
 Copyright (C) 2013 [Guy Morita](http://github.com/guymorita) and [al lin](http://github.com/cmdoptesc/)
 
